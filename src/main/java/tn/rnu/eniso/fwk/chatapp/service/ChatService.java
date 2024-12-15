@@ -2,55 +2,46 @@ package tn.rnu.eniso.fwk.chatapp.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import tn.rnu.eniso.fwk.chatapp.dal.MessageDao;
 import tn.rnu.eniso.fwk.chatapp.entity.Message;
 import tn.rnu.eniso.fwk.chatapp.entity.User;
-import tn.rnu.eniso.fwk.chatapp.model.MessageDTO;
 import tn.rnu.eniso.fwk.chatapp.repository.MessageRepository;
 import tn.rnu.eniso.fwk.chatapp.repository.UserRepository;
 
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
 public class ChatService {
 
     @Autowired
-    private final MessageRepository messageRepository;
+    private  MessageRepository messageRepository;
     @Autowired
-    private final UserRepository userRepository;
+    private  UserRepository userRepository;
 
-
-    public ChatService(MessageRepository messageRepository, UserRepository userRepository) {
-        this.messageRepository = messageRepository;
-        this.userRepository = userRepository;
-    }
-
-    public void sendMessage(MessageDTO messageDTO) {
+    public void sendMessage(Message messageDTO) {
         Message message = new Message();
         message.setSender(messageDTO.getSender());
         message.setReceiver(messageDTO.getReceiver());
-        message.setContent(messageDTO.getMessage());
+        message.setContent(messageDTO.getContent());
         messageRepository.save(message);
     }
 
-    public List<MessageDTO> receiveMessages(String receiver) {
-        List<Message> messages = messageRepository.findByReceiver(receiver);
+    public List<Message> receiveMessages(String receiver) {
+        List<Message> messages = messageRepository.findByReceiver_Username(receiver);
         return messages.stream().map(message -> {
-            MessageDTO dto = new MessageDTO();
+            Message dto = new Message();
             dto.setSender(message.getSender());
             dto.setReceiver(message.getReceiver());
-            dto.setMessage(message.getContent());
+            dto.setContent(message.getContent());
             return dto;
         }).collect(Collectors.toList());
     }
-    public User createUser(User userInfo) {
-        if (userRepository.findByUsername(userInfo.getUsername()).isPresent()) {
-            throw new RuntimeException("User already exists: " + userInfo.getUsername());
+    public User createUser(String userName) {
+        if (userRepository.findByUsername(userName).isPresent()) {
+            throw new RuntimeException("User already exists: " + userName);
         }
         User user = new User();
-        user.setUsername(userInfo.getUsername());
+        user.setUsername(userName);
         return userRepository.save(user);
     }
 
@@ -62,20 +53,4 @@ public class ChatService {
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found: " + username));
     }
-
-
-//    private final MessageDao messageDao;
-//
-//    @Autowired
-//    public ChatService(MessageDao messageDao) {
-//        this.messageDao = messageDao;
-//    }
-//
-//    public void sendMessage(MessageDTO message) {
-//        messageDao.addMessage(message);
-//    }
-//
-//    public MessageDTO receiveMessage(String receiver, long timeoutInSeconds) throws InterruptedException {
-//        return messageDao.getMessageForRecipient(receiver, timeoutInSeconds, TimeUnit.SECONDS);
-//    }
 }
